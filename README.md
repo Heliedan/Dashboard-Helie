@@ -67,7 +67,7 @@ PERCENT= A DEFINIR
 
 ### 4. Lancer le dashboard
 ```bash
-python3 dashboard6.py
+python3 dashboard.py
 ```
 
 Accédez au dashboard : **http://localhost:8081**
@@ -75,7 +75,7 @@ Accédez au dashboard : **http://localhost:8081**
 ## 📁 Structure
 ```
 bot-trading-mexc/
-├── dashboard6.py           # Serveur Flask
+├── dashboard.py           # Serveur Flask
 ├── templates/
 │   └── dashboard.html     # Interface web
 └── static/
