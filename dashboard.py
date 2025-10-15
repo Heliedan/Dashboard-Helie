@@ -522,6 +522,64 @@ def download_file(filetype):
     except Exception as e:
         return f"Erreur: {str(e)}", 500
 
+# ============ NOUVELLES ROUTES POUR LA CONFIG ============
+
+@app.route('/api/get-config', methods=['GET'])
+def get_config():
+    """Récupère la configuration actuelle du bot.conf"""
+    try:
+        config = {}
+        with open('bot.conf', 'r') as f:
+            for line in f:
+                line = line.strip()
+                if '=' in line and not line.startswith('#'):
+                    key, value = line.split('=', 1)
+                    if key in ['BUY_OFFSET', 'SELL_OFFSET', 'PERCENT']:
+                        config[key.lower()] = value.strip('"')
+        return jsonify(config)
+    except Exception as e:
+        print(f"❌ Erreur get-config: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/update-config', methods=['POST'])
+def update_bot_config():
+    """Met à jour les paramètres du bot dans bot.conf"""
+    try:
+        data = request.json
+        buy_offset = data.get('buy_offset')
+        sell_offset = data.get('sell_offset')
+        percent = data.get('percent')
+        
+        # Lire le fichier actuel
+        with open('bot.conf', 'r') as f:
+            lines = f.readlines()
+        
+        # Mettre à jour les lignes
+        new_lines = []
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith('BUY_OFFSET=') and buy_offset is not None:
+                new_lines.append(f'BUY_OFFSET={buy_offset}\n')
+            elif stripped.startswith('SELL_OFFSET=') and sell_offset is not None:
+                new_lines.append(f'SELL_OFFSET={sell_offset}\n')
+            elif stripped.startswith('PERCENT=') and percent is not None:
+                new_lines.append(f'PERCENT={percent}\n')
+            else:
+                new_lines.append(line)
+        
+        # Écrire le nouveau fichier
+        with open('bot.conf', 'w') as f:
+            f.writelines(new_lines)
+        
+        # Recharger la config en mémoire
+        load_config()
+        
+        print(f"✅ Configuration mise à jour: BUY_OFFSET={buy_offset}, SELL_OFFSET={sell_offset}, PERCENT={percent}")
+        return jsonify({'success': True, 'message': 'Configuration mise à jour avec succès'})
+    except Exception as e:
+        print(f"❌ Erreur update-config: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     load_config()
     load_auto_config()

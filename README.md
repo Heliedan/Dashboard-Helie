@@ -1,8 +1,6 @@
-# 🤖 Dashboard Interactif
+# 🤖 Bot Dashboard Heliedan - Dashboard
 
-![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
-![Flask](https://img.shields.io/badge/Flask-2.0+-green.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+Dashboard web moderne pour monitorer et contrôler un bot de trading automatisé sur MEXC.
 
 ## 📊 Fonctionnalités
 
@@ -13,8 +11,8 @@
 - **Performance** : Graphique des gains cumulés
 
 ### 📈 Graphiques avancés
-- **Performance globale** : Évolution des gains cycle par cycle
-- **Distribution des gains** : Histogramme par tranches
+- **Performance globale** : Évolution des gains cycle par cycle avec échelle adaptative
+- **Distribution des gains** : Histogramme par tranches avec échelle dynamique
 - **Cycles actifs détaillés** : 
   - Jauge séparée pour cycles en Achat vs Vente
   - Tendances sur 7/14/30 jours ou historique complet
@@ -26,7 +24,13 @@
 - Démarrage/arrêt à la volée
 - Configuration persistante entre redémarrages
 
-### 🛠️ Actions disponibles
+### 🛠️ Configuration Bot
+- **Modification des paramètres en direct** : Buy Offset, Sell Offset, Percent
+- **Sauvegarde instantanée** dans bot.conf
+- **Mise à jour automatique** de l'affichage
+- Interface intuitive et sécurisée
+
+### 🎮 Actions disponibles
 - Création manuelle de nouveaux cycles
 - Actualisation et mise à jour des ordres MEXC
 - Annulation de cycles spécifiques
@@ -42,7 +46,7 @@
 ### 1. Cloner le repository
 ```bash
 git clone https://github.com/Heliedan/Dashboard-Helie.git
-cd bot-trading-mexc
+cd Dashboard-Helie
 ```
 
 ### 2. Installer les dépendances
@@ -72,7 +76,7 @@ Accédez au dashboard : **http://localhost:8081**
 
 ## 📁 Structure
 ```
-bot-trading-mexc/
+Dashboard-Helie/
 ├── dashboard.py           # Serveur Flask
 ├── templates/
 │   └── dashboard.html     # Interface web
@@ -86,16 +90,10 @@ bot-trading-mexc/
 
 ## 🎮 Utilisation
 
-### Linux / Mac
-```bash
-python3 dashboard.py
-```
-
-### Windows
-```bash
-python dashboard.py
-```
-
+### Configuration Bot
+1. Modifiez les valeurs de **Buy Offset**, **Sell Offset** ou **Percent (%)**
+2. Cliquez sur **💾 Sauvegarder**
+3. Les paramètres sont mis à jour instantanément dans `bot.conf`
 
 ### Mode automatique
 1. Définir l'intervalle souhaité (en minutes)
@@ -110,37 +108,64 @@ python dashboard.py
 
 ## 🔧 API Endpoints
 
-| Endpoint | Description |
-|----------|-------------|
-| `/api/data` | Données complètes |
-| `/api/auto-status` | État du mode auto |
-| `/api/auto-start` | Démarrer le mode auto |
-| `/api/auto-stop` | Arrêter le mode auto |
-| `/api/new-cycle` | Créer un cycle |
-| `/api/update-cycles` | MAJ des cycles |
-| `/api/cancel-cycle` | Annuler un cycle |
-| `/api/export` | Exporter les données |
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/data` | GET | Données complètes du dashboard |
+| `/api/auto-status` | GET | État du mode automatique |
+| `/api/auto-start` | POST | Démarrer le mode auto |
+| `/api/auto-stop` | POST | Arrêter le mode auto |
+| `/api/auto-config` | POST | Modifier l'intervalle |
+| `/api/get-config` | GET | Récupérer la configuration actuelle |
+| `/api/update-config` | POST | Mettre à jour la configuration |
+| `/api/performance` | GET | Données de performance |
+| `/api/gains-distribution` | GET | Distribution des gains |
+| `/api/active-cycles-history-split` | GET | Historique séparé Buy/Sell |
+| `/api/new-cycle` | POST | Créer un cycle |
+| `/api/update-cycles` | POST | MAJ des cycles |
+| `/api/cancel-cycle` | POST | Annuler un cycle |
+| `/api/export` | POST | Exporter les données |
 
 ## 🎨 Technologies
 
 - **Backend** : Flask (Python)
 - **Frontend** : HTML5, CSS3, JavaScript ES6+
-- **Graphiques** : Chart.js 4.4.0
+- **Graphiques** : Chart.js 4.4.0 avec échelles adaptatives
 - **Base de données** : SQLite3
 - **API** : MEXC API v3, CoinGecko API
 
+## 📱 Responsive Design
+
+Le dashboard est entièrement responsive et s'adapte aux écrans :
+- Desktop (1920px+)
+- Laptop (1366px+)
+- Tablet (768px+)
+- Mobile (320px+)
+
 ## ⚠️ Avertissements
 
-- **Trading à vos risques** : Ce dashboard est fourni à titre éducatif
+- **Trading à vos risques** : Ce dashboard est fourni à titre éducatif. Le trading comporte des risques de perte en capital.
 - **Sécurité** : Ne partagez jamais vos clés API
-- **N'exposez pas** le dashboard sur Internet sans authentification
+- **Exposition** : N'exposez pas le dashboard sur Internet sans authentification
 
-## 📝 License
+## 🐛 Debug
 
-MIT License
+Les logs du serveur s'affichent dans le terminal :
+```bash
+✅ Config chargee: 12 parametres
+🚀 Thread auto-cycle demarre
+🌐 URL: http://localhost:8081
+```
+
+Console navigateur (F12) pour les erreurs frontend.
+
+## 👨‍💻 Contribution
+
+Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou une pull request.
+
+## 📧 Support
+
+Pour toute question ou problème, adressez vous au concepteur Héliédan
 
 ---
 
 **⚡ Fait avec passion pour le trading automatisé**
-
-Developeur et concepteur du Dashboard Héliédan.

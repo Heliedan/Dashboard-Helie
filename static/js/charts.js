@@ -288,6 +288,7 @@ function updatePerformanceChart() {
             scales: {
                 y: {
                     beginAtZero: true,
+                    suggestedMax: Math.max(...data) * 1.1,
                     grid: { color: '#2d3748', drawBorder: false },
                     ticks: {
                         color: '#9ca3af',
@@ -308,6 +309,8 @@ function updatePerformanceChart() {
 // Graphique de distribution des gains
 function updateGainsDistributionChart(data) {
     if (gainsDistributionChart) gainsDistributionChart.destroy();
+    
+    const maxCount = Math.max(...data.counts);
     
     const ctx = document.getElementById('gainsDistributionChart').getContext('2d');
     gainsDistributionChart = new Chart(ctx, {
@@ -343,8 +346,12 @@ function updateGainsDistributionChart(data) {
             scales: {
                 y: {
                     beginAtZero: true,
+                    suggestedMax: maxCount * 1.1,
                     grid: { color: '#2d3748', drawBorder: false },
-                    ticks: { color: '#9ca3af', stepSize: 1 },
+                    ticks: { 
+                        color: '#9ca3af', 
+                        stepSize: Math.max(1, Math.ceil(maxCount / 10))
+                    },
                     title: { display: true, text: 'Nombre de cycles', color: '#9ca3af', font: { size: 12 } }
                 },
                 x: {

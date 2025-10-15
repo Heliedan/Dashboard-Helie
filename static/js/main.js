@@ -159,9 +159,15 @@ async function refreshData() {
         document.getElementById('btcPrice').textContent = formatNumber(data.balances.btc_price, 2);
         document.getElementById('completedCount').textContent = data.stats.completed_cycles;
         document.getElementById('totalCount').textContent = data.stats.total_cycles;
-        document.getElementById('buyOffset').textContent = data.config.buy_offset;
-        document.getElementById('sellOffset').textContent = '+' + data.config.sell_offset;
-        document.getElementById('percentPerCycle').textContent = data.config.percent + '%';
+        if (document.getElementById('buyOffsetDisplay')) {
+            document.getElementById('buyOffsetDisplay').textContent = data.config.buy_offset;
+        }
+        if (document.getElementById('sellOffsetDisplay')) {
+            document.getElementById('sellOffsetDisplay').textContent = '+' + data.config.sell_offset;
+        }
+        if (document.getElementById('percentDisplay')) {
+            document.getElementById('percentDisplay').textContent = data.config.percent + '%';
+        }
         
         const activeCycles = data.cycles.filter(c => c.status !== 'completed');
         const activeTable = document.getElementById('activeCyclesTable');

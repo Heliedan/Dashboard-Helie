@@ -83,6 +83,141 @@
             color: #0f1419;
             border-color: #4ade80;
         }
+
+        /* Configuration Bot */
+        .config-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .config-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .config-input {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .config-input label {
+            font-weight: bold;
+            color: #64b5f6;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .config-input small {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: -4px;
+        }
+
+        .config-input input {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(100, 181, 246, 0.2);
+            border-radius: 6px;
+            color: white;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .config-input input:focus {
+            outline: none;
+            border-color: #64b5f6;
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.1);
+        }
+
+        .config-input input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .config-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .btn-update-config {
+            padding: 10px 30px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+        }
+
+        .btn-update-config:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 222, 128, 0.3);
+        }
+
+        .btn-update-config:active {
+            transform: translateY(0);
+        }
+
+        #config-status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            min-height: 15px;
+        }
+
+        #config-status.success {
+            background: rgba(76, 175, 80, 0.15);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            color: #4caf50;
+            animation: slideIn 0.3s ease;
+        }
+
+        #config-status.error {
+            background: rgba(244, 67, 54, 0.15);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            color: #f44336;
+            animation: slideIn 0.3s ease;
+        }
+
+        #config-status.info {
+            background: rgba(33, 150, 243, 0.15);
+            border: 1px solid rgba(33, 150, 243, 0.3);
+            color: #2196f3;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .config-row {
+                grid-template-columns: 1fr;
+            }
+        }
+	.current-value {
+            color: #4ade80;
+            font-weight: 700;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -150,21 +285,40 @@
         </div>
     </div>
 
+    <!-- Configuration Bot -->
     <div class="section">
-        <div class="section-title">Parametres de Trading</div>
-        <div class="params-grid">
-            <div class="param-item">
-                <span class="param-label">Buy Offset</span>
-                <span class="param-value" id="buyOffset">-400</span>
+        <div class="section-title">⚙️ Configuration Bot</div>
+        <div class="config-form">
+            <div class="config-row">
+                <div class="config-input">
+                    <label for="buyOffsetInput">
+                        Buy Offset: 
+                        <span class="current-value" id="buyOffsetDisplay">-400</span>
+                    </label>
+                    <input type="number" id="buyOffsetInput" placeholder="Chargement...">
+                    <small>Décalage d'achat (ex: -400)</small>
+                </div>
+                <div class="config-input">
+                    <label for="sellOffsetInput">
+                        Sell Offset: 
+                        <span class="current-value" id="sellOffsetDisplay">+500</span>
+                    </label>
+                    <input type="number" id="sellOffsetInput" placeholder="Chargement...">
+                    <small>Décalage de vente (ex: 500)</small>
+                </div>
+                <div class="config-input">
+                    <label for="percentInput">
+                        Percent (%): 
+                        <span class="current-value" id="percentDisplay">3%</span>
+                    </label>
+                    <input type="number" step="0.1" id="percentInput" placeholder="Chargement...">
+                    <small>Pourcentage du portefeuille (ex: 3)</small>
+                </div>
             </div>
-            <div class="param-item">
-                <span class="param-label">Sell Offset</span>
-                <span class="param-value" id="sellOffset">+500</span>
+            <div class="config-buttons">
+                <button class="btn-update-config" onclick="updateConfig()">💾 Sauvegarder</button>
             </div>
-            <div class="param-item">
-                <span class="param-label">Capital par cycle</span>
-                <span class="param-value" id="percentPerCycle">3%</span>
-            </div>
+            <div id="config-status"></div>
         </div>
     </div>
 
@@ -193,7 +347,7 @@
         </div>
     </div>
 
-    <div class="section">
+<div class="section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
             <div class="section-title" style="margin:0;">Cycles Actifs - Détail</div>
             <div style="display:flex;gap:10px;">
@@ -207,16 +361,16 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;">
             <div style="background:#1a1f2e;padding:20px;border-radius:12px;border:1px solid #2d3748;">
                 <h3 style="color:#60a5fa;font-size:14px;text-transform:uppercase;margin-bottom:15px;text-align:center;">Cycles en Achat</h3>
-                <div style="display:flex;flex-direction:column;align-items:center;gap:20px;">
-                    <div style="position:relative;width:180px;height:180px;">
-                        <canvas id="gaugeBuyChart"></canvas>
-                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
-                            <div style="font-size:42px;font-weight:bold;color:#60a5fa;" id="gaugeBuyValue">0</div>
-                            <div style="font-size:11px;color:#9ca3af;text-transform:uppercase;margin-top:5px;">Actifs</div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+                    <div style="position:relative;width:180px;height:180px;margin-top:50px;">
+                        <div style="position:absolute;top:-50px;left:50%;transform:translateX(-50%);text-align:center;width:100%;">
+                            <div style="font-size:38px;font-weight:bold;color:#60a5fa;" id="gaugeBuyValue">0</div>
+                            <div style="font-size:10px;color:#9ca3af;text-transform:uppercase;margin-top:2px;">Actifs</div>
                         </div>
+                        <canvas id="gaugeBuyChart"></canvas>
                     </div>
-                    <div style="width:100%;">
-                        <p style="color:#9ca3af;font-size:11px;margin-bottom:8px;text-align:center;">Tendance <span id="periodLabelBuy">14 derniers jours</span></p>
+                    <div style="width:100%;margin-top:10px;">
+                        <p style="color:#9ca3af;font-size:11px;margin-bottom:8px;text-align:center;">Tendance <span id="periodLabelBuy">7 derniers jours</span></p>
                         <div style="height:120px;">
                             <canvas id="sparklineBuyChart"></canvas>
                         </div>
@@ -226,16 +380,16 @@
             
             <div style="background:#1a1f2e;padding:20px;border-radius:12px;border:1px solid #2d3748;">
                 <h3 style="color:#fb923c;font-size:14px;text-transform:uppercase;margin-bottom:15px;text-align:center;">Cycles en Vente</h3>
-                <div style="display:flex;flex-direction:column;align-items:center;gap:20px;">
-                    <div style="position:relative;width:180px;height:180px;">
-                        <canvas id="gaugeSellChart"></canvas>
-                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
-                            <div style="font-size:42px;font-weight:bold;color:#fb923c;" id="gaugeSellValue">0</div>
-                            <div style="font-size:11px;color:#9ca3af;text-transform:uppercase;margin-top:5px;">Actifs</div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+                    <div style="position:relative;width:180px;height:180px;margin-top:50px;">
+                        <div style="position:absolute;top:-50px;left:50%;transform:translateX(-50%);text-align:center;width:100%;">
+                            <div style="font-size:38px;font-weight:bold;color:#fb923c;" id="gaugeSellValue">0</div>
+                            <div style="font-size:10px;color:#9ca3af;text-transform:uppercase;margin-top:2px;">Actifs</div>
                         </div>
+                        <canvas id="gaugeSellChart"></canvas>
                     </div>
-                    <div style="width:100%;">
-                        <p style="color:#9ca3af;font-size:11px;margin-bottom:8px;text-align:center;">Tendance <span id="periodLabelSell">14 derniers jours</span></p>
+                    <div style="width:100%;margin-top:10px;">
+                        <p style="color:#9ca3af;font-size:11px;margin-bottom:8px;text-align:center;">Tendance <span id="periodLabelSell">7 derniers jours</span></p>
                         <div style="height:120px;">
                             <canvas id="sparklineSellChart"></canvas>
                         </div>
