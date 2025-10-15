@@ -88,6 +88,17 @@ bot-trading-mexc/
 
 ## 🎮 Utilisation
 
+### Linux / Mac
+```bash
+python3 dashboard.py
+```
+
+### Windows
+```bash
+python dashboard.py
+```
+
+
 ### Mode automatique
 1. Définir l'intervalle souhaité (en minutes)
 2. Activer le toggle "Mode Automatique"
