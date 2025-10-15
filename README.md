@@ -1,6 +1,4 @@
-# 🤖 Bot Trading MEXC - Dashboard
-
-Dashboard web
+# 🤖 Dashboard Interactif
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-2.0+-green.svg)
