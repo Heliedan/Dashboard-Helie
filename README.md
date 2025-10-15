@@ -1,6 +1,6 @@
 # 🤖 Bot Trading MEXC - Dashboard
 
-Dashboard web moderne pour monitorer et contrôler un bot de trading automatisé sur MEXC.
+Dashboard web
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-2.0+-green.svg)
@@ -60,9 +60,9 @@ Le dashboard nécessite :
 ```bash
 MEXC_API_KEY="votre_api_key"
 MEXC_SECRET_KEY="votre_secret_key"
-BUY_OFFSET=-400
-SELL_OFFSET=500
-PERCENT=3
+BUY_OFFSET= A DEFINIR
+SELL_OFFSET= A DEFINIR
+PERCENT= A DEFINIR
 ```
 
 ### 4. Lancer le dashboard
@@ -133,3 +133,5 @@ MIT License
 ---
 
 **⚡ Fait avec passion pour le trading automatisé**
+
+Developeur et concepteur du Dashboard Héliédan.
