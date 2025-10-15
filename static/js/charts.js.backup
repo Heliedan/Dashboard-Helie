@@ -1,0 +1,296 @@
+// Variables pour les graphiques
+let gaugeChart = null;
+let sparklineChart = null;
+let currentPeriod = 14; // Par défaut 14 jours
+let historyData = { dates: [], counts: [], full_dates: [] };
+
+// Chargement des données pour les graphiques
+async function loadPerformanceData() {
+    try {
+        const response = await fetch('/api/performance');
+        allPerformanceData = await response.json();
+        updatePerformanceChart();
+    } catch (e) {
+        console.error('Erreur performance:', e);
+    }
+}
+
+async function loadGainsDistribution() {
+    try {
+        const response = await fetch('/api/gains-distribution');
+        const data = await response.json();
+        updateGainsDistributionChart(data);
+    } catch (e) {
+        console.error('Erreur gains distribution:', e);
+    }
+}
+
+async function loadActiveCyclesTimeline() {
+    try {
+        const response = await fetch('/api/active-cycles-history');
+        historyData = await response.json();
+        updateGaugeAndSparkline(currentPeriod);
+    } catch (e) {
+        console.error('Erreur active cycles timeline:', e);
+    }
+}
+
+// Fonction pour changer la période
+function changePeriod(days) {
+    currentPeriod = days;
+    
+    // Mettre à jour les boutons actifs
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (parseInt(btn.dataset.period) === days) {
+            btn.classList.add('active');
+        }
+    });
+    
+    updateGaugeAndSparkline(days);
+}
+
+// Mise à jour de la jauge et du sparkline
+function updateGaugeAndSparkline(days) {
+    if (!historyData.dates || historyData.dates.length === 0) return;
+    
+    // Filtrer les données selon la période
+    let filteredDates, filteredCounts;
+    
+    if (days === 0) {
+        // Tout afficher
+        filteredDates = historyData.dates;
+        filteredCounts = historyData.counts;
+    } else {
+        // Prendre les N derniers jours
+        const startIndex = Math.max(0, historyData.dates.length - days);
+        filteredDates = historyData.dates.slice(startIndex);
+        filteredCounts = historyData.counts.slice(startIndex);
+    }
+    
+    // Valeur actuelle (dernier point)
+    const currentValue = filteredCounts[filteredCounts.length - 1] || 0;
+    
+    // Mettre à jour la jauge
+    document.getElementById('gaugeValue').textContent = currentValue;
+    
+    if (gaugeChart) gaugeChart.destroy();
+    
+    const ctxGauge = document.getElementById('gaugeChart').getContext('2d');
+    gaugeChart = new Chart(ctxGauge, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [currentValue, Math.max(10 - currentValue, 0)],
+                backgroundColor: ['#4ade80', '#1f2937'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            circumference: 180,
+            rotation: -90,
+            cutout: '75%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+    
+    // Mettre à jour le label de période
+    let periodLabel = days === 0 ? 'Historique complet' : `${days} derniers jours`;
+    document.getElementById('periodLabel').textContent = periodLabel;
+    
+    // Mettre à jour le sparkline
+    if (sparklineChart) sparklineChart.destroy();
+    
+    const ctxSparkline = document.getElementById('sparklineChart').getContext('2d');
+    sparklineChart = new Chart(ctxSparkline, {
+        type: 'line',
+        data: {
+            labels: filteredDates,
+            datasets: [{
+                data: filteredCounts,
+                borderColor: '#4ade80',
+                backgroundColor: 'rgba(74,222,128,0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 3,
+                pointBackgroundColor: '#4ade80',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(26,31,46,0.9)',
+                    titleColor: '#e8eaed',
+                    bodyColor: '#4ade80',
+                    borderColor: '#4a5568',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + ' cycles actifs';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#2d3748', drawBorder: false },
+                    ticks: { 
+                        color: '#9ca3af', 
+                        stepSize: 1,
+                        font: { size: 11 }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { 
+                        color: '#9ca3af', 
+                        font: { size: 10 },
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Graphique de performance (gains cumulés)
+function updatePerformanceChart() {
+    const labels = allPerformanceData.map(d => d.cycle_id);
+    const data = allPerformanceData.map(d => d.cumulative_gain);
+    
+    if (performanceChart) performanceChart.destroy();
+    
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Gain cumule',
+                data: data,
+                borderColor: '#4ade80',
+                backgroundColor: 'rgba(74,222,128,0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: '#4ade80',
+                pointHoverBorderColor: '#fff',
+                pointHoverBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(26,31,46,0.9)',
+                    titleColor: '#e8eaed',
+                    bodyColor: '#4ade80',
+                    borderColor: '#4a5568',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Gain: $' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#2d3748', drawBorder: false },
+                    ticks: {
+                        color: '#9ca3af',
+                        callback: function(value) {
+                            return '$' + value.toFixed(0);
+                        }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#9ca3af', maxRotation: 0, autoSkipPadding: 20 },
+                    title: { display: true, text: 'Cycles', color: '#9ca3af', font: { size: 12 } }
+                }
+            },
+            interaction: { intersect: false, mode: 'index' }
+        }
+    });
+}
+
+// Graphique de distribution des gains
+function updateGainsDistributionChart(data) {
+    if (gainsDistributionChart) gainsDistributionChart.destroy();
+    
+    const ctx = document.getElementById('gainsDistributionChart').getContext('2d');
+    gainsDistributionChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.ranges,
+            datasets: [{
+                label: 'Nombre de cycles',
+                data: data.counts,
+                backgroundColor: '#4ade80',
+                borderColor: '#22c55e',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(26,31,46,0.9)',
+                    titleColor: '#e8eaed',
+                    bodyColor: '#4ade80',
+                    borderColor: '#4a5568',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + ' cycles';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#2d3748', drawBorder: false },
+                    ticks: {
+                        color: '#9ca3af',
+                        stepSize: 1
+                    },
+                    title: { display: true, text: 'Nombre de cycles', color: '#9ca3af', font: { size: 12 } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#9ca3af', maxRotation: 45, minRotation: 45 },
+                    title: { display: true, text: 'Tranche de gain', color: '#9ca3af', font: { size: 12 } }
+                }
+            }
+        }
+    });
+}
