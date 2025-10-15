@@ -41,7 +41,7 @@
 
 ### 1. Cloner le repository
 ```bash
-git clone https://github.com/TON_USERNAME/bot-trading-mexc.git
+git clone https://github.com/Heliedan/Dashboard-Helie.git
 cd bot-trading-mexc
 ```
 
