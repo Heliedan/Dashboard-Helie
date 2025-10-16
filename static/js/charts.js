@@ -76,12 +76,29 @@ function updateDualGaugeAndSparkline(days) {
     
     if (gaugeBuyChart) gaugeBuyChart.destroy();
     
+    // Calculer le max dynamique avec paliers pour ACHAT
+    let maxBuy;
+    if (currentBuyValue <= 10) {
+        maxBuy = 10;
+    } else if (currentBuyValue <= 50) {
+        maxBuy = 50;
+    } else if (currentBuyValue <= 100) {
+        maxBuy = 100;
+    } else if (currentBuyValue <= 500) {
+        maxBuy = 500;
+    } else if (currentBuyValue <= 1000) {
+        maxBuy = 1000;
+    } else {
+        // Au-dessus de 1000, arrondir au millier supérieur
+        maxBuy = Math.ceil(currentBuyValue / 1000) * 1000;
+    }
+    
     const ctxBuy = document.getElementById('gaugeBuyChart').getContext('2d');
     gaugeBuyChart = new Chart(ctxBuy, {
         type: 'doughnut',
         data: {
             datasets: [{
-                data: [currentBuyValue, Math.max(10 - currentBuyValue, 0)],
+                data: [currentBuyValue, Math.max(maxBuy - currentBuyValue, 0)],
                 backgroundColor: ['#60a5fa', '#1f2937'],
                 borderWidth: 0
             }]
@@ -104,12 +121,29 @@ function updateDualGaugeAndSparkline(days) {
     
     if (gaugeSellChart) gaugeSellChart.destroy();
     
+    // Calculer le max dynamique avec paliers pour VENTE
+    let maxSell;
+    if (currentSellValue <= 10) {
+        maxSell = 10;
+    } else if (currentSellValue <= 50) {
+        maxSell = 50;
+    } else if (currentSellValue <= 100) {
+        maxSell = 100;
+    } else if (currentSellValue <= 500) {
+        maxSell = 500;
+    } else if (currentSellValue <= 1000) {
+        maxSell = 1000;
+    } else {
+        // Au-dessus de 1000, arrondir au millier supérieur
+        maxSell = Math.ceil(currentSellValue / 1000) * 1000;
+    }
+    
     const ctxSell = document.getElementById('gaugeSellChart').getContext('2d');
     gaugeSellChart = new Chart(ctxSell, {
         type: 'doughnut',
         data: {
             datasets: [{
-                data: [currentSellValue, Math.max(10 - currentSellValue, 0)],
+                data: [currentSellValue, Math.max(maxSell - currentSellValue, 0)],
                 backgroundColor: ['#fb923c', '#1f2937'],
                 borderWidth: 0
             }]
