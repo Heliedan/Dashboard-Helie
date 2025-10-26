@@ -14,16 +14,16 @@ Dashboard web pour monitorer et contrôler votre bot de trading bot-spot.
 cd ~/bot-spot
 
 # Téléchargez les fichiers du dashboard
-wget https://github.com/Heliedan/bot-spot-dashboard/archive/main.zip
-unzip main.zip
-cp -r bot-spot-dashboard-main/* .
-rm -rf bot-spot-dashboard-main main.zip
+wget https://github.com/Heliedan/Dashboard-Helie/archive/v2.zip
+unzip v2.zip
+cp -r Dashboard-Helie-v2/* .
+rm -rf Dashboard-Helie-v2 v2.zip
 ```
 
 **Ou avec git :**
 ```bash
 cd ~/bot-spot
-git clone https://github.com/Heliedan/bot-spot-dashboard.git temp
+git clone -b v2 https://github.com/Heliedan/Dashboard-Helie.git temp
 cp -r temp/* .
 rm -rf temp
 ```
@@ -38,7 +38,10 @@ pip install flask requests
 python3 dashboard.py
 ```
 
-Accédez au dashboard : **http://localhost:8081**
+**Accès local :** http://localhost:8081  
+**Accès réseau :** http://VOTRE_IP:8081 (remplacez VOTRE_IP par l'IP de votre Raspberry Pi)
+
+💡 *Pour trouver votre IP : `hostname -I`*
 
 ## ✨ Fonctionnalités
 
