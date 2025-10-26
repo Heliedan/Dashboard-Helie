@@ -1,12 +1,12 @@
-# 🤖 Bot-Spot Dashboard
+# 🤖 Dashboard Heliedan
 
-Dashboard web pour monitorer et contrôler votre bot de trading bot-spot.
+Dashboard web pour monitorer et contrôler votre bot de trading.
 
 ## 📋 Prérequis
 
 - Python 3.8+
-- [Bot-Spot](https://github.com/netwarp/bot-spot) installé et configuré
-- Clés API MEXC configurées dans `bot.conf`
+- Bot-Spot installé et configuré
+- Clés API configurées dans `bot.conf`
 
 ## 🚀 Installation
 ```bash
@@ -50,10 +50,6 @@ python3 dashboard.py
 - ⚙️ Mode automatique avec intervalles configurables
 - 🛠️ Configuration du bot en direct
 - 📥 Export CSV/JSON
-
-## ⚠️ Avertissement
-
-Le trading comporte des risques. Ne partagez jamais vos clés API.
 
 ## 📧 Support
 
