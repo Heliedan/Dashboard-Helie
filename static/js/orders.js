@@ -34,10 +34,18 @@ function updateSellOrdersUI(orders, btcPrice) {
     
     // Calculer le gain potentiel total
     let totalPotentialGain = 0;
-    orders.forEach(order => {
+    console.log('📊 Calcul du gain potentiel total pour', orders.length, 'ordres de vente actifs:');
+    orders.forEach((order, index) => {
         const gain = (order.sellPrice * order.quantity) - (order.buyPrice * order.quantity);
+        console.log(`   Ordre ${index + 1} (Cycle #${order.id}):`, {
+            buyPrice: order.buyPrice,
+            sellPrice: order.sellPrice,
+            quantity: order.quantity,
+            gain: gain.toFixed(2)
+        });
         totalPotentialGain += gain;
     });
+    console.log('💰 Gain potentiel total:', totalPotentialGain.toFixed(2), '$');
     document.getElementById('totalPotentialGain').textContent = formatNumber(totalPotentialGain, 2);
     
     // Mettre à jour aussi dans la Vue d'ensemble

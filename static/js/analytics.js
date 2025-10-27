@@ -386,27 +386,52 @@ function updateGainsDistributionChartAnalytics(cycles) {
     // Trouver min et max
     const minGain = Math.min(...gains);
     const maxGain = Math.max(...gains);
+    const spread = maxGain - minGain;
     
-    // Créer 8 tranches automatiques
-    const numRanges = 8;
-    const rangeSize = (maxGain - minGain) / numRanges;
+    console.log(`📊 Distribution des gains: min=$${minGain.toFixed(2)}, max=$${maxGain.toFixed(2)}, spread=$${spread.toFixed(2)}`);
+    
+    // Adapter le nombre de tranches selon l'étendue des données
+    let numRanges;
+    if (spread < 0.5) {
+        // Très faible écart : 4 tranches suffisent
+        numRanges = 4;
+    } else if (spread < 2) {
+        // Faible écart : 5 tranches
+        numRanges = 5;
+    } else if (spread < 10) {
+        // Écart moyen : 6 tranches
+        numRanges = 6;
+    } else {
+        // Grand écart : 8 tranches
+        numRanges = 8;
+    }
+    
+    // Si très peu de cycles, réduire le nombre de tranches
+    if (cycles.length < 10) {
+        numRanges = Math.min(numRanges, 4);
+    }
+    
+    const rangeSize = spread / numRanges;
     
     const ranges = [];
     for (let i = 0; i < numRanges; i++) {
         const rangeMin = minGain + (i * rangeSize);
         const rangeMax = minGain + ((i + 1) * rangeSize);
         
-        // Formater les labels joliment
+        // Formater les labels joliment selon la taille des montants
         let label;
-        if (rangeSize < 0.1) {
+        if (rangeSize < 0.05) {
+            // Très petits montants : 3 décimales
+            label = `$${rangeMin.toFixed(3)} - $${rangeMax.toFixed(3)}`;
+        } else if (rangeSize < 0.5) {
             // Petits montants : 2 décimales
-            label = `$${rangeMin.toFixed(2)} à $${rangeMax.toFixed(2)}`;
-        } else if (rangeSize < 1) {
+            label = `$${rangeMin.toFixed(2)} - $${rangeMax.toFixed(2)}`;
+        } else if (rangeSize < 5) {
             // Moyens montants : 1 décimale
-            label = `$${rangeMin.toFixed(1)} à $${rangeMax.toFixed(1)}`;
+            label = `$${rangeMin.toFixed(1)} - $${rangeMax.toFixed(1)}`;
         } else {
             // Gros montants : entiers
-            label = `$${rangeMin.toFixed(0)} à $${rangeMax.toFixed(0)}`;
+            label = `$${rangeMin.toFixed(0)} - $${rangeMax.toFixed(0)}`;
         }
         
         ranges.push({ min: rangeMin, max: rangeMax, label });
@@ -419,6 +444,8 @@ function updateGainsDistributionChartAnalytics(cycles) {
     
     // Ajouter les gains exactement égaux au max dans la dernière tranche
     counts[counts.length - 1] += gains.filter(g => g === maxGain).length;
+    
+    console.log(`📊 ${numRanges} tranches créées, répartition:`, counts);
     
     const ctx = document.getElementById('gainsDistributionChartAnalytics').getContext('2d');
     gainsDistributionChartAnalytics = new Chart(ctx, {

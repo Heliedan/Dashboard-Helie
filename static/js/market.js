@@ -398,53 +398,118 @@ function generateLabelsForPeriod(data, period, timestamps = null) {
 
 // Recommandations
 function updateRecommendations(data) {
-    const price = data.price;
     const change24h = data.price_change_24h || 0;
     const fearGreed = data.fear_greed_index;
-    const athDistance = ((price - data.ath) / data.ath * 100);
+    const high24h = data.high_24h;
+    const low24h = data.low_24h;
+    const price = data.price;
     
-    // Recommandation ACHAT
-    let buyStatus = '', buyReason = '', buyColor = '';
+    // Calculer la volatilité (amplitude 24h en %)
+    const volatility = ((high24h - low24h) / low24h * 100);
     
-    if (change24h < -3 && fearGreed < 40) {
-        buyStatus = '✅ Favorable';
-        buyReason = 'Prix en baisse et sentiment de peur. Bon moment pour accumuler.';
-        buyColor = 'rgba(74,222,128,0.1)';
-    } else if (change24h > 5 || fearGreed > 75) {
-        buyStatus = '⚠️ Prudence';
-        buyReason = 'Prix élevé ou marché suracheté. Attendre une correction.';
-        buyColor = 'rgba(239,68,68,0.1)';
+    // === VOLATILITÉ ===
+    let volIcon = '', volLabel = '', volColor = '';
+    if (volatility > 8) {
+        volIcon = '🔴';
+        volLabel = 'Élevée';
+        volColor = '#ef4444';
+    } else if (volatility > 4) {
+        volIcon = '🟡';
+        volLabel = 'Moyenne';
+        volColor = '#fbbf24';
     } else {
-        buyStatus = '⏸️ Neutre';
-        buyReason = 'Conditions normales. Suivre votre stratégie habituelle.';
-        buyColor = 'rgba(251,191,36,0.1)';
+        volIcon = '🟢';
+        volLabel = 'Faible';
+        volColor = '#4ade80';
     }
     
-    // Recommandation VENTE
-    let sellStatus = '', sellReason = '', sellColor = '';
+    document.getElementById('marketVolatilityIcon').textContent = volIcon;
+    document.getElementById('marketVolatilityLabel').textContent = volLabel;
+    document.getElementById('marketVolatilityLabel').style.color = volColor;
     
-    if (change24h > 5 && fearGreed > 70) {
-        sellStatus = '✅ Favorable';
-        sellReason = 'Prix élevé et cupidité. Bon moment pour réaliser des gains.';
-        sellColor = 'rgba(74,222,128,0.1)';
+    // === TENDANCE ===
+    let trendIcon = '', trendLabel = '', trendColor = '';
+    if (change24h > 3) {
+        trendIcon = '📈';
+        trendLabel = `Haussière (+${change24h.toFixed(1)}%)`;
+        trendColor = '#4ade80';
+    } else if (change24h < -3) {
+        trendIcon = '📉';
+        trendLabel = `Baissière (${change24h.toFixed(1)}%)`;
+        trendColor = '#ef4444';
+    } else {
+        trendIcon = '➡️';
+        trendLabel = `Stable (${change24h >= 0 ? '+' : ''}${change24h.toFixed(1)}%)`;
+        trendColor = '#fbbf24';
+    }
+    
+    document.getElementById('marketTrendIcon').textContent = trendIcon;
+    document.getElementById('marketTrendLabel').textContent = trendLabel;
+    document.getElementById('marketTrendLabel').style.color = trendColor;
+    
+    // === SENTIMENT ===
+    let sentIcon = '', sentLabel = '', sentColor = '';
+    if (fearGreed <= 20) {
+        sentIcon = '😱';
+        sentLabel = `Peur Extrême (${fearGreed})`;
+        sentColor = '#dc2626';
+    } else if (fearGreed <= 40) {
+        sentIcon = '😨';
+        sentLabel = `Peur (${fearGreed})`;
+        sentColor = '#f97316';
+    } else if (fearGreed <= 60) {
+        sentIcon = '😐';
+        sentLabel = `Neutre (${fearGreed})`;
+        sentColor = '#fbbf24';
+    } else if (fearGreed <= 75) {
+        sentIcon = '😃';
+        sentLabel = `Avidité (${fearGreed})`;
+        sentColor = '#a3e635';
+    } else {
+        sentIcon = '🤑';
+        sentLabel = `Avidité Extrême (${fearGreed})`;
+        sentColor = '#4ade80';
+    }
+    
+    document.getElementById('marketSentimentIcon').textContent = sentIcon;
+    document.getElementById('marketSentimentLabel').textContent = sentLabel;
+    document.getElementById('marketSentimentLabel').style.color = sentColor;
+    
+    // === IMPACT SUR LES CYCLES ===
+    const impacts = [];
+    
+    // Impact volatilité
+    if (volatility > 8) {
+        impacts.push('Volatilité élevée → Vos cycles vont se déclencher plus rapidement');
+    } else if (volatility < 2) {
+        impacts.push('Faible volatilité → Cycles moins fréquents, patience recommandée');
+    } else {
+        impacts.push('Volatilité normale → Cycles se déclenchent selon vos offsets habituels');
+    }
+    
+    // Impact sentiment
+    if (fearGreed <= 25) {
+        impacts.push('Peur extrême → Opportunités d\'achat possibles à bas prix');
+    } else if (fearGreed >= 75) {
+        impacts.push('Avidité extrême → Vos ordres de vente risquent de se déclencher rapidement');
+    }
+    
+    // Impact tendance
+    if (change24h > 5) {
+        impacts.push('Forte hausse → Vos ordres de vente seront atteints plus vite');
     } else if (change24h < -5) {
-        sellStatus = '⚠️ Éviter';
-        sellReason = 'Prix en chute. Pas le moment de vendre, laissez vos ordres.';
-        sellColor = 'rgba(239,68,68,0.1)';
-    } else {
-        sellStatus = '⏸️ Neutre';
-        sellReason = 'Conditions normales. Vos ordres se déclencheront au bon moment.';
-        sellColor = 'rgba(251,191,36,0.1)';
+        impacts.push('Forte baisse → Nouvelles opportunités d\'achat à prix réduit');
     }
     
-    // Mise à jour UI
-    document.getElementById('buyRecommendStatus').textContent = buyStatus;
-    document.getElementById('buyRecommendReason').textContent = buyReason;
-    document.getElementById('recommendBuy').style.background = buyColor;
-    
-    document.getElementById('sellRecommendStatus').textContent = sellStatus;
-    document.getElementById('sellRecommendReason').textContent = sellReason;
-    document.getElementById('recommendSell').style.background = sellColor;
+    // Afficher les impacts
+    const impactList = document.getElementById('marketImpactList');
+    if (impacts.length > 0) {
+        impactList.innerHTML = impacts.map(impact => 
+            `<li style="padding:8px 0;color:#e8eaed;font-size:14px;"><span style="color:#4ade80;">•</span> ${impact}</li>`
+        ).join('');
+    } else {
+        impactList.innerHTML = '<li style="padding:8px 0;color:#e8eaed;font-size:14px;"><span style="color:#4ade80;">•</span> Conditions normales du marché</li>';
+    }
 }
 
 // Formater les grands nombres

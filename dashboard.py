@@ -187,12 +187,9 @@ def get_cycles_from_db():
         completed_count = cursor.fetchone()[0]
         conn.close()
         
-        # Debug: afficher un exemple de cycle
+        print(f"✅ DB: {len(cycles)} cycles charges, {completed_count} completes")
         if len(cycles) > 0:
-            print(f"✅ DB: {len(cycles)} cycles charges, {completed_count} completes")
             print(f"📊 Exemple de cycle (premier): {cycles[0]}")
-        else:
-            print(f"✅ DB: {len(cycles)} cycles charges, {completed_count} completes")
             
         return {"cycles": cycles, "completed": completed, "total_count": total_count, "completed_count": completed_count}
     except Exception as e:

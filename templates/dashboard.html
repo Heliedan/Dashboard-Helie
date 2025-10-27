@@ -312,7 +312,6 @@
             <button class="btn" onclick="createNewCycle()">➕ Nouveau Cycle</button>
             <button class="btn secondary" onclick="updateCycles()">🔄 Mettre à jour</button>
             <button class="btn secondary" onclick="exportData()">💾 Exporter</button>
-            <button class="btn secondary" onclick="syncMexc()">🔗 Sync MEXC</button>
             <button class="btn danger" onclick="cancelCycle()">❌ Annuler Cycle</button>
         </div>
 
@@ -524,41 +523,6 @@
                 </div>
             </div>
             
-            <!-- Recommandations -->
-            <div class="section">
-                <div class="section-title">💡 Recommandations pour le Bot</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-                    <div id="recommendBuy" style="
-                        padding:20px;
-                        background:rgba(74,222,128,0.1);
-                        border:1px solid rgba(74,222,128,0.3);
-                        border-radius:8px;
-                    ">
-                        <div style="font-size:14px;color:#9ca3af;margin-bottom:10px;">ACHATS</div>
-                        <div style="font-size:18px;font-weight:600;color:#4ade80;margin-bottom:10px;">
-                            <span id="buyRecommendStatus">--</span>
-                        </div>
-                        <div style="font-size:13px;color:#e8eaed;" id="buyRecommendReason">
-                            Analyse en cours...
-                        </div>
-                    </div>
-                    
-                    <div id="recommendSell" style="
-                        padding:20px;
-                        background:rgba(239,68,68,0.1);
-                        border:1px solid rgba(239,68,68,0.3);
-                        border-radius:8px;
-                    ">
-                        <div style="font-size:14px;color:#9ca3af;margin-bottom:10px;">VENTES</div>
-                        <div style="font-size:18px;font-weight:600;color:#ef4444;margin-bottom:10px;">
-                            <span id="sellRecommendStatus">--</span>
-                        </div>
-                        <div style="font-size:13px;color:#e8eaed;" id="sellRecommendReason">
-                            Analyse en cours...
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
