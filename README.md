@@ -6,7 +6,7 @@ Dashboard web pour monitorer et contrôler votre bot de trading.
 
 - Python 3.8+
 - Bot-Spot installé et configuré
-- Clés API configurées dans `bot.conf`
+- Clés API MEXC configurées dans `bot.conf`
 
 ## 🚀 Installation
 ```bash
@@ -45,11 +45,43 @@ python3 dashboard.py
 
 ## ✨ Fonctionnalités
 
-- 📊 Monitoring en temps réel (balances, prix BTC, cycles actifs)
-- 📈 Graphiques de performance
+### 🏠 Vue d'ensemble
+- 📊 Monitoring en temps réel (balances USDC/BTC, prix, cycles)
+- 💰 Gain total réalisé et gain potentiel des ordres actifs
 - ⚙️ Mode automatique avec intervalles configurables
-- 🛠️ Configuration du bot en direct
+- 🛠️ Configuration des offsets en direct
+
+### 📊 Analytics
+- 📈 Statistiques détaillées (taux de réussite, gain moyen, volatilité)
+- 🏆 Top 10 meilleurs trades et Bottom 10 moins rentables
+
+### 🔄 Cycles
+- 📋 Vue complète de tous vos cycles (actifs et terminés)
 - 📥 Export CSV/JSON
+
+### 📈 Marché
+- 💹 Prix BTC en temps réel avec graphique (24h, 7j, 3M)
+- 📊 Indicateurs de marché (volume, market cap, liquidité)
+- 🎯 Fear & Greed Index avec jauge visuelle
+- 📉 Dominance BTC/ETH et distance ATH
+- 💡 Recommandations d'achat/vente automatiques
+
+### 📝 Gestion des Ordres
+- ✏️ Modification manuelle des prix de vente
+- 🔄 Synchronisation automatique avec MEXC
+- 👁️ Aperçu du gain en temps réel
+
+### 🎯 Profils de Trading
+- 📝 Profils pré-configurés pour différentes conditions de marché
+- ➕ Création de profils personnalisés
+- ⚡ Application rapide des configurations
+
+## 🎨 Interface
+
+- Design moderne et responsive
+- Mode sombre optimisé
+- Graphiques interactifs
+- Actualisation automatique toutes les 3 minutes
 
 ## 📧 Support
 
