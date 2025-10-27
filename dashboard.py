@@ -186,7 +186,14 @@ def get_cycles_from_db():
         cursor.execute("SELECT COUNT(*) as completed FROM cycles WHERE status = 'completed'")
         completed_count = cursor.fetchone()[0]
         conn.close()
-        print(f"✅ DB: {len(cycles)} cycles charges, {completed_count} completes")
+        
+        # Debug: afficher un exemple de cycle
+        if len(cycles) > 0:
+            print(f"✅ DB: {len(cycles)} cycles charges, {completed_count} completes")
+            print(f"📊 Exemple de cycle (premier): {cycles[0]}")
+        else:
+            print(f"✅ DB: {len(cycles)} cycles charges, {completed_count} completes")
+            
         return {"cycles": cycles, "completed": completed, "total_count": total_count, "completed_count": completed_count}
     except Exception as e:
         print(f"❌ Erreur DB: {e}")
@@ -825,158 +832,375 @@ def apply_profile(profile_id):
         print(f"❌ Erreur apply-profile: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ ROUTES POUR LE BACKTESTING ============
+# ============ ROUTES POUR LA GESTION DES ORDRES DE VENTE ============
 
-@app.route('/api/backtest', methods=['POST'])
-def run_backtest():
-    """Lance un backtest avec les paramètres fournis"""
+@app.route('/api/active-sell-orders', methods=['GET'])
+def get_active_sell_orders():
+    """Récupère tous les ordres de vente actifs (cycles avec sellId)"""
     try:
-        data = request.json
-        strategy = data.get('strategy', 'default')
-        start_date = data.get('start_date')
-        end_date = data.get('end_date')
-        initial_capital = float(data.get('initial_capital', 1000))
-        
-        # Récupérer les données historiques
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
-        query = "SELECT * FROM cycles WHERE status = 'completed'"
-        params = []
+        # Récupérer les cycles qui ont un ordre de vente actif
+        # Status peut être 'sell' ou 'order_sell_placed'
+        cursor.execute("""
+            SELECT id, quantity, buyPrice, sellPrice, sellId, status
+            FROM cycles 
+            WHERE status IN ('sell', 'order_sell_placed') 
+            AND sellId IS NOT NULL AND sellId != ''
+            ORDER BY id ASC
+        """)
         
-        # Note: Pas de filtrage par date car pas de colonne created_at
-        # On utilise l'ID comme ordre chronologique
-        
-        query += " ORDER BY id ASC"
-        
-        cursor.execute(query, params)
         cycles = [dict(row) for row in cursor.fetchall()]
         conn.close()
         
-        if len(cycles) < 2:
-            return jsonify({'error': 'Pas assez de données pour le backtest'})
+        # Récupérer le prix BTC actuel
+        btc_price = get_btc_price_coingecko()
         
-        # Exécuter le backtest
-        results = execute_backtest(cycles, strategy, initial_capital)
+        print(f"✅ {len(cycles)} ordres de vente actifs récupérés")
         
         return jsonify({
             'success': True,
-            'results': results,
-            'parameters': {
-                'strategy': strategy,
-                'start_date': start_date,
-                'end_date': end_date,
-                'initial_capital': initial_capital,
-                'total_cycles': len(cycles)
-            }
+            'orders': cycles,
+            'btc_price': btc_price
         })
         
     except Exception as e:
-        print(f"❌ Erreur backtest: {e}")
+        print(f"❌ Erreur get_active_sell_orders: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-def execute_backtest(cycles, strategy, initial_capital):
-    """Exécute le backtest avec la stratégie donnée"""
-    capital = initial_capital
-    positions = []
-    trades = []
-    equity_curve = [initial_capital]
-    
-    for cycle in cycles:
-        # Calculer le gain du cycle
-        buy_amount = cycle['buyPrice'] * cycle['quantity']
-        sell_amount = cycle['sellPrice'] * cycle['quantity']
-        gain = sell_amount - buy_amount
+@app.route('/api/update-sell-order', methods=['POST'])
+def update_sell_order():
+    """Met à jour le prix de vente d'un cycle en annulant et recréant l'ordre sur MEXC"""
+    try:
+        data = request.json
+        cycle_id = data.get('cycle_id')
+        new_sell_price = float(data.get('new_sell_price'))
         
-        # Appliquer la stratégie
-        if strategy == 'percentage_5':
-            investment_ratio = 0.05  # 5% du capital par trade
-            investment = capital * investment_ratio
-            trade_gain = gain * (investment / buy_amount) if buy_amount > 0 else 0
-            capital += trade_gain
-            
-        elif strategy == 'percentage_10':
-            investment_ratio = 0.10  # 10% du capital par trade
-            investment = capital * investment_ratio
-            trade_gain = gain * (investment / buy_amount) if buy_amount > 0 else 0
-            capital += trade_gain
-            
-        elif strategy == 'percentage_20':
-            investment_ratio = 0.20  # 20% du capital par trade
-            investment = capital * investment_ratio
-            trade_gain = gain * (investment / buy_amount) if buy_amount > 0 else 0
-            capital += trade_gain
-            
-        elif strategy == 'fixed_50':
-            fixed_amount = 50  # $50 par trade
-            trade_gain = gain * (fixed_amount / buy_amount) if buy_amount > 0 else 0
-            capital += trade_gain
-            
-        elif strategy == 'fixed_100':
-            fixed_amount = 100  # $100 par trade
-            trade_gain = gain * (fixed_amount / buy_amount) if buy_amount > 0 else 0
-            capital += trade_gain
-            
-        elif strategy == 'fixed_200':
-            fixed_amount = 200  # $200 par trade
-            trade_gain = gain * (fixed_amount / buy_amount) if buy_amount > 0 else 0
-            capital += trade_gain
+        if not cycle_id or not new_sell_price:
+            return jsonify({'success': False, 'error': 'Paramètres manquants'}), 400
         
-        trades.append({
-            'cycle_id': cycle['id'],
-            'buy_price': cycle['buyPrice'],
-            'sell_price': cycle['sellPrice'],
-            'quantity': cycle['quantity'],
-            'gain': gain,
-            'trade_gain': trade_gain if 'trade_gain' in locals() else 0,
-            'capital': capital
+        print(f"\n🔄 Mise à jour ordre de vente - Cycle #{cycle_id}")
+        print(f"   Nouveau prix: ${new_sell_price:,.2f}")
+        
+        # Récupérer les infos du cycle
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM cycles WHERE id = ?", (cycle_id,))
+        cycle = cursor.fetchone()
+        
+        if not cycle:
+            conn.close()
+            return jsonify({'success': False, 'error': f'Cycle #{cycle_id} introuvable'}), 404
+        
+        cycle_dict = dict(cycle)
+        old_sell_price = cycle_dict['sellPrice']
+        quantity = cycle_dict['quantity']
+        sell_order_id = cycle_dict.get('sellId')
+        
+        print(f"   Ancien prix: ${old_sell_price:,.2f}")
+        print(f"   Quantité: {quantity} BTC")
+        print(f"   Order ID: {sell_order_id}")
+        
+        # Annuler l'ancien ordre sur MEXC
+        if sell_order_id and sell_order_id != '':
+            print(f"   🗑️  Annulation de l'ordre MEXC {sell_order_id}...")
+            cancel_success = cancel_mexc_order(sell_order_id)
+            
+            if not cancel_success:
+                conn.close()
+                return jsonify({'success': False, 'error': 'Échec de l\'annulation de l\'ordre MEXC'}), 500
+            
+            print(f"   ✅ Ordre annulé sur MEXC")
+        
+        # Créer le nouvel ordre sur MEXC
+        print(f"   ➕ Création du nouvel ordre MEXC @ ${new_sell_price:,.2f}...")
+        new_order_id = create_mexc_sell_order(quantity, new_sell_price)
+        
+        if not new_order_id:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Échec de la création du nouvel ordre MEXC'}), 500
+        
+        print(f"   ✅ Nouvel ordre créé: {new_order_id}")
+        
+        # Mettre à jour la base de données
+        cursor.execute("""
+            UPDATE cycles 
+            SET sellPrice = ?, sellId = ?
+            WHERE id = ?
+        """, (new_sell_price, new_order_id, cycle_id))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"   ✅ Base de données mise à jour")
+        print(f"   🎉 Cycle #{cycle_id} modifié avec succès !")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Ordre de vente mis à jour',
+            'cycle_id': cycle_id,
+            'old_sell_price': old_sell_price,
+            'new_sell_price': new_sell_price,
+            'new_order_id': new_order_id
         })
         
-        equity_curve.append(capital)
-    
-    # Calculer les métriques
-    total_return = (capital - initial_capital) / initial_capital * 100
-    winning_trades = len([t for t in trades if t['trade_gain'] > 0])
-    losing_trades = len([t for t in trades if t['trade_gain'] < 0])
-    win_rate = (winning_trades / len(trades)) * 100 if trades else 0
-    
-    # Calculer le drawdown maximum
-    peak = initial_capital
-    max_drawdown = 0
-    for equity in equity_curve:
-        if equity > peak:
-            peak = equity
-        drawdown = (peak - equity) / peak * 100
-        if drawdown > max_drawdown:
-            max_drawdown = drawdown
-    
-    # Calculer le ratio de Sharpe (simplifié)
-    returns = []
-    for i in range(1, len(equity_curve)):
-        ret = (equity_curve[i] - equity_curve[i-1]) / equity_curve[i-1]
-        returns.append(ret)
-    
-    if returns:
-        avg_return = sum(returns) / len(returns)
-        std_return = (sum((r - avg_return) ** 2 for r in returns) / len(returns)) ** 0.5
-        sharpe_ratio = avg_return / std_return if std_return > 0 else 0
-    else:
-        sharpe_ratio = 0
-    
-    return {
-        'initial_capital': initial_capital,
-        'final_capital': capital,
-        'total_return': round(total_return, 2),
-        'total_trades': len(trades),
-        'winning_trades': winning_trades,
-        'losing_trades': losing_trades,
-        'win_rate': round(win_rate, 2),
-        'max_drawdown': round(max_drawdown, 2),
-        'sharpe_ratio': round(sharpe_ratio, 2),
-        'equity_curve': equity_curve,
-        'trades': trades[-50:]  # Derniers 50 trades seulement
-    }
+    except Exception as e:
+        print(f"❌ Erreur update_sell_order: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def cancel_mexc_order(order_id):
+    """Annule un ordre sur MEXC"""
+    try:
+        api_key = CONFIG.get("MEXC_API_KEY", "")
+        secret_key = CONFIG.get("MEXC_SECRET_KEY", "")
+        
+        if not api_key or not secret_key:
+            print("❌ Clés API MEXC manquantes")
+            return False
+        
+        base_url = "https://api.mexc.com"
+        endpoint = "/api/v3/order"
+        
+        timestamp = int(time.time() * 1000)
+        params = {
+            'symbol': 'BTCUSDC',
+            'orderId': order_id,
+            'timestamp': timestamp
+        }
+        
+        query_string = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
+        signature = create_mexc_signature(query_string, secret_key)
+        
+        url = f"{base_url}{endpoint}?{query_string}&signature={signature}"
+        headers = {'X-MEXC-APIKEY': api_key}
+        
+        response = requests.delete(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            print(f"   ✅ Ordre {order_id} annulé sur MEXC")
+            return True
+        else:
+            print(f"   ❌ Erreur annulation MEXC: {response.status_code} - {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Exception cancel_mexc_order: {e}")
+        return False
+
+def create_mexc_sell_order(quantity, price):
+    """Crée un ordre de vente sur MEXC"""
+    try:
+        api_key = CONFIG.get("MEXC_API_KEY", "")
+        secret_key = CONFIG.get("MEXC_SECRET_KEY", "")
+        
+        if not api_key or not secret_key:
+            print("❌ Clés API MEXC manquantes")
+            return None
+        
+        base_url = "https://api.mexc.com"
+        endpoint = "/api/v3/order"
+        
+        timestamp = int(time.time() * 1000)
+        
+        # Formater la quantité avec 8 décimales max
+        quantity_str = f"{quantity:.8f}".rstrip('0').rstrip('.')
+        
+        # Formater le prix avec 2 décimales
+        price_str = f"{price:.2f}"
+        
+        params = {
+            'symbol': 'BTCUSDC',
+            'side': 'SELL',
+            'type': 'LIMIT',
+            'quantity': quantity_str,
+            'price': price_str,
+            'timestamp': timestamp
+        }
+        
+        query_string = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
+        signature = create_mexc_signature(query_string, secret_key)
+        
+        url = f"{base_url}{endpoint}?{query_string}&signature={signature}"
+        headers = {'X-MEXC-APIKEY': api_key}
+        
+        response = requests.post(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            result = response.json()
+            order_id = str(result.get('orderId', ''))
+            print(f"   ✅ Ordre SELL créé: {order_id} - {quantity_str} BTC @ ${price_str}")
+            return order_id
+        else:
+            print(f"   ❌ Erreur création ordre MEXC: {response.status_code} - {response.text}")
+            return None
+            
+    except Exception as e:
+        print(f"❌ Exception create_mexc_sell_order: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+# ============ ROUTES POUR LES DONNÉES DE MARCHÉ ============
+
+@app.route('/api/market-data', methods=['GET'])
+def get_market_data():
+    """Récupère les données du marché Bitcoin depuis CoinGecko"""
+    try:
+        print("📈 Récupération des données du marché...")
+        
+        # API CoinGecko pour les données complètes de BTC
+        url = "https://api.coingecko.com/api/v3/coins/bitcoin"
+        params = {
+            'localization': 'false',
+            'tickers': 'false',
+            'community_data': 'false',
+            'developer_data': 'false',
+            'sparkline': 'true'
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Extraire les données pertinentes
+        market_data_obj = data.get('market_data', {})
+        
+        # Extraire les sparklines (7 jours complets disponibles dans la réponse)
+        sparkline_7d = market_data_obj.get('sparkline_7d', {}).get('price', [])
+        
+        market_info = {
+            'success': True,
+            'price': market_data_obj.get('current_price', {}).get('usd', 0),
+            'price_change_24h': market_data_obj.get('price_change_percentage_24h', 0),
+            'high_24h': market_data_obj.get('high_24h', {}).get('usd', 0),
+            'low_24h': market_data_obj.get('low_24h', {}).get('usd', 0),
+            'volume_24h': market_data_obj.get('total_volume', {}).get('usd', 0),
+            'market_cap': market_data_obj.get('market_cap', {}).get('usd', 0),
+            'ath': market_data_obj.get('ath', {}).get('usd', 0),
+            'circulating_supply': market_data_obj.get('circulating_supply', 0),
+            'sparkline_24h': sparkline_7d[-24:] if len(sparkline_7d) >= 24 else sparkline_7d,
+            'sparkline_7d': sparkline_7d
+        }
+        
+        # Récupérer les dominances depuis le global market
+        try:
+            global_url = "https://api.coingecko.com/api/v3/global"
+            global_response = requests.get(global_url, timeout=5)
+            if global_response.status_code == 200:
+                global_data = global_response.json().get('data', {})
+                market_info['btc_dominance'] = global_data.get('market_cap_percentage', {}).get('btc', 0)
+                market_info['eth_dominance'] = global_data.get('market_cap_percentage', {}).get('eth', 0)
+            else:
+                market_info['btc_dominance'] = 0
+                market_info['eth_dominance'] = 0
+        except:
+            market_info['btc_dominance'] = 0
+            market_info['eth_dominance'] = 0
+        
+        # Récupérer le Fear & Greed Index
+        try:
+            fear_greed_url = "https://api.alternative.me/fng/?limit=1"
+            fear_response = requests.get(fear_greed_url, timeout=5)
+            if fear_response.status_code == 200:
+                fear_data = fear_response.json().get('data', [])
+                if fear_data:
+                    market_info['fear_greed_index'] = int(fear_data[0].get('value', 50))
+                else:
+                    market_info['fear_greed_index'] = 50
+            else:
+                market_info['fear_greed_index'] = 50
+        except:
+            market_info['fear_greed_index'] = 50
+        
+        print(f"✅ Données marché récupérées: BTC ${market_info['price']:,.2f}")
+        
+        return jsonify(market_info)
+        
+    except Exception as e:
+        print(f"❌ Erreur get_market_data: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/market-chart', methods=['GET'])
+def get_market_chart():
+    """Récupère l'historique des prix BTC pour différentes périodes"""
+    try:
+        period = request.args.get('period', '24h')
+        print(f"📊 Récupération historique prix BTC pour {period}...")
+        
+        # Mapper les périodes vers les paramètres CoinGecko
+        period_mapping = {
+            '24h': 1,      # 1 jour
+            '7d': 7,       # 7 jours
+            '30d': 30,     # 30 jours
+            '90d': 90,     # 90 jours
+            '180d': 180,   # 180 jours
+            '365d': 365,   # 365 jours
+            'max': 'max'   # Maximum disponible
+        }
+        
+        days = period_mapping.get(period, 1)
+        
+        # Déterminer l'intervalle selon la période
+        if days == 1:
+            interval = 'hourly'
+        elif days <= 90:
+            interval = 'daily'
+        else:
+            interval = None  # Auto pour les longues périodes
+        
+        # API CoinGecko pour l'historique des prix
+        url = f"https://api.coingecko.com/api/v3/coins/bitcoin/market_chart"
+        params = {
+            'vs_currency': 'usd',
+            'days': days
+        }
+        
+        # Ajouter l'interval seulement si défini
+        if interval:
+            params['interval'] = interval
+        
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Extraire les prix avec leurs timestamps
+        raw_prices = data.get('prices', [])
+        
+        # Pour 24h, on veut environ 24 points (1 par heure)
+        if period == '24h' and len(raw_prices) > 24:
+            step = max(1, len(raw_prices) // 24)
+            sampled_prices = raw_prices[::step][:24]
+        else:
+            sampled_prices = raw_prices
+        
+        # Extraire uniquement les valeurs de prix
+        prices = [price[1] for price in sampled_prices]
+        # Extraire les timestamps pour un affichage plus précis côté client
+        timestamps = [price[0] for price in sampled_prices]
+        
+        print(f"✅ Historique récupéré: {len(prices)} points de données pour {period}")
+        
+        return jsonify({
+            'success': True,
+            'prices': prices,
+            'timestamps': timestamps,
+            'period': period,
+            'count': len(prices)
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur get_market_chart: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     load_config()

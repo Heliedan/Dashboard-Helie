@@ -298,8 +298,9 @@
         <div class="tabs">
             <button class="tab active" onclick="switchTab('overview', event)">🏠 Vue d'ensemble</button>
             <button class="tab" onclick="switchTab('analytics', event)">📊 Analytics</button>
-            <button class="tab" onclick="switchTab('backtesting', event)">🧪 Backtesting</button>
             <button class="tab" onclick="switchTab('cycles', event)">🔄 Cycles</button>
+            <button class="tab" onclick="switchTab('market', event)">📈 Marché</button>
+            <button class="tab" onclick="switchTab('orders', event)">📝 Gestion des Ordres</button>
             <button class="tab" onclick="switchTab('profiles', event)">🎯 Profils</button>
             <button class="tab" onclick="switchTab('config', event)">⚙️ Configuration</button>
         </div>
@@ -330,6 +331,11 @@
                 <div class="card-label">Gain Total</div>
                 <div class="card-value positive">$<span id="gainAbs">0.00</span></div>
                 <div class="card-change positive">+<span id="gainPercent">0.00</span>%</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Gain Potentiel Total</div>
+                <div class="card-value positive">$<span id="totalPotentialGainOverview">0.00</span></div>
+                <div class="card-subtitle">Si tous les ordres s'exécutent</div>
             </div>
             <div class="card">
                 <div class="card-label">Cycles</div>
@@ -405,176 +411,302 @@
         </div>
     </div>
 
-
-    <!-- TAB: BACKTESTING -->
-    <div id="tab-backtesting" class="tab-content">
+    <!-- TAB: MARCHÉ -->
+    <div id="tab-market" class="tab-content">
         <div class="section">
-            <div class="section-title">🧪 Backtesting de Stratégies</div>
+            <div class="section-title">📈 Analyse du Marché Bitcoin</div>
+            <p style="color:#9ca3af;font-size:14px;margin-bottom:20px;">
+                Données en temps réel pour optimiser vos décisions de trading
+            </p>
             
-            <!-- Paramètres du backtest -->
-            <div class="section">
-                <div class="section-title">Paramètres du Backtest</div>
-                <div class="config-form">
-                    <div class="config-row">
-                        <div class="config-input">
-                            <label for="backtestStrategySelect">Stratégie</label>
-                            <select id="backtestStrategySelect" style="padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(100,181,246,0.2); border-radius: 6px; color: white; font-size: 15px;">
-                                <option value="percentage_5">5% du capital par trade</option>
-                                <option value="percentage_10">10% du capital par trade</option>
-                                <option value="percentage_20">20% du capital par trade</option>
-                                <option value="fixed_50">Montant fixe $50 par trade</option>
-                                <option value="fixed_100">Montant fixe $100 par trade</option>
-                                <option value="fixed_200">Montant fixe $200 par trade</option>
-                            </select>
+            <!-- Prix & Variations -->
+            <div class="cards-grid" style="margin-bottom:30px;">
+                <div class="card" style="grid-column: span 2;">
+                    <div style="display:flex;justify-content:space-between;align-items:start;">
+                        <div>
+                            <div class="card-label">Bitcoin (BTC)</div>
+                            <div class="card-value" style="font-size:48px;">$<span id="marketBtcPrice">0.00</span></div>
+                            <div class="card-change" id="marketBtcChange">+0.00%</div>
                         </div>
-                        <div class="config-input">
-                            <label for="backtestInitialCapital">Capital Initial ($)</label>
-                            <input type="number" id="backtestInitialCapital" value="1000" min="100" step="100">
-                        </div>
-                        <div class="config-input">
-                            <label for="backtestStartDate">Date de Début</label>
-                            <input type="date" id="backtestStartDate">
-                            <small>Filtrage par ID (approximatif)</small>
-                        </div>
-                        <div class="config-input">
-                            <label for="backtestEndDate">Date de Fin</label>
-                            <input type="date" id="backtestEndDate">
-                            <small>Filtrage par ID (approximatif)</small>
+                        <div style="text-align:right;">
+                            <div style="font-size:12px;color:#9ca3af;margin-bottom:5px;">Tendance</div>
+                            <div id="marketTrend" style="font-size:16px;font-weight:600;">--</div>
+                            <div style="font-size:11px;color:#9ca3af;margin-top:10px;">Dernière MAJ</div>
+                            <div id="marketLastUpdate" style="font-size:11px;color:#4ade80;">--:--</div>
                         </div>
                     </div>
-                    <div class="config-buttons">
-                        <button class="btn" id="launchBacktestBtn" onclick="launchBacktest()">🚀 Lancer Backtest</button>
-                        <button class="btn secondary" onclick="exportBacktestResults()">💾 Exporter Résultats</button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-label">Plus Haut 24h</div>
+                    <div class="card-value" style="font-size:24px;color:#4ade80;">$<span id="marketHigh24h">0.00</span></div>
+                    <div class="card-subtitle">Maximum</div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-label">Plus Bas 24h</div>
+                    <div class="card-value" style="font-size:24px;color:#ef4444;">$<span id="marketLow24h">0.00</span></div>
+                    <div class="card-subtitle">Minimum</div>
+                </div>
+            </div>
+            
+            <!-- Graphique Prix avec sélection période -->
+            <div class="section">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                    <div class="section-title" style="margin:0;">📊 Évolution du Prix</div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="period-btn active" onclick="changeMarketPeriod('24h')" data-period="24h">24h</button>
+                        <button class="period-btn" onclick="changeMarketPeriod('7d')" data-period="7d">7j</button>
+                        <button class="period-btn" onclick="changeMarketPeriod('90d')" data-period="90d">3M</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="market24hChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Volume & Sentiment -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+                <div class="section">
+                    <div class="section-title">💰 Volumes de Trading</div>
+                    <div style="padding:20px;">
+                        <div style="margin-bottom:20px;">
+                            <div style="color:#9ca3af;font-size:12px;margin-bottom:5px;">Volume 24h</div>
+                            <div style="color:#e8eaed;font-size:28px;font-weight:700;">$<span id="marketVolume24h">0</span></div>
+                        </div>
+                        <div style="margin-bottom:20px;">
+                            <div style="color:#9ca3af;font-size:12px;margin-bottom:5px;">Market Cap</div>
+                            <div style="color:#e8eaed;font-size:20px;font-weight:600;">$<span id="marketCap">0</span></div>
+                        </div>
+                        <div>
+                            <div style="color:#9ca3af;font-size:12px;margin-bottom:5px;">Liquidité</div>
+                            <div id="marketLiquidity" style="color:#4ade80;font-size:16px;font-weight:600;">--</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">😨 Fear & Greed Index</div>
+                    <div style="padding:20px;text-align:center;">
+                        <div style="position:relative;width:200px;height:200px;margin:0 auto 20px;">
+                            <canvas id="fearGreedGauge"></canvas>
+                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+                                <div id="fearGreedValue" style="font-size:42px;font-weight:700;color:#e8eaed;">--</div>
+                                <div style="font-size:12px;color:#9ca3af;">/ 100</div>
+                            </div>
+                        </div>
+                        <div id="fearGreedLabel" style="font-size:18px;font-weight:600;color:#9ca3af;">--</div>
+                        <div style="font-size:12px;color:#9ca3af;margin-top:5px;">Sentiment du marché</div>
                     </div>
                 </div>
             </div>
             
-            <div id="backtestError"></div>
-            
-            <!-- Résultats du backtest -->
+            <!-- Dominance & Métriques -->
             <div class="section">
-                <div class="section-title">Résultats du Backtest</div>
-                
-                <!-- Métriques principales -->
-                <div class="analytics-grid">
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-icon">💰</div>
-                            <div class="stat-card-title">Capital Initial</div>
-                        </div>
-                        <div class="stat-card-value" id="backtestInitialCapital">$0</div>
+                <div class="section-title">📊 Dominance & Métriques</div>
+                <div class="params-grid">
+                    <div class="param-item">
+                        <span class="param-label">BTC Dominance</span>
+                        <span class="param-value" id="btcDominance">--</span>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-icon">💎</div>
-                            <div class="stat-card-title">Capital Final</div>
-                        </div>
-                        <div class="stat-card-value" id="backtestFinalCapital">$0</div>
+                    <div class="param-item">
+                        <span class="param-label">ETH Dominance</span>
+                        <span class="param-value" id="ethDominance">--</span>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-icon">📈</div>
-                            <div class="stat-card-title">Rendement Total</div>
-                        </div>
-                        <div class="stat-card-value" id="backtestTotalReturn">0%</div>
+                    <div class="param-item">
+                        <span class="param-label">ATH Distance</span>
+                        <span class="param-value" id="athDistance">--</span>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-icon">🎯</div>
-                            <div class="stat-card-title">Taux de Réussite</div>
-                        </div>
-                        <div class="stat-card-value" id="backtestWinRate">0%</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-icon">📊</div>
-                            <div class="stat-card-title">Total Trades</div>
-                        </div>
-                        <div class="stat-card-value" id="backtestTotalTrades">0</div>
+                    <div class="param-item">
+                        <span class="param-label">Circulation</span>
+                        <span class="param-value" id="circulatingSupply">--</span>
                     </div>
                 </div>
-                
-                <!-- Métriques de risque -->
-                <div class="analytics-grid">
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-icon">📉</div>
-                            <div class="stat-card-title">Max Drawdown</div>
+            </div>
+            
+            <!-- Recommandations -->
+            <div class="section">
+                <div class="section-title">💡 Recommandations pour le Bot</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                    <div id="recommendBuy" style="
+                        padding:20px;
+                        background:rgba(74,222,128,0.1);
+                        border:1px solid rgba(74,222,128,0.3);
+                        border-radius:8px;
+                    ">
+                        <div style="font-size:14px;color:#9ca3af;margin-bottom:10px;">ACHATS</div>
+                        <div style="font-size:18px;font-weight:600;color:#4ade80;margin-bottom:10px;">
+                            <span id="buyRecommendStatus">--</span>
                         </div>
-                        <div class="stat-card-value" id="backtestMaxDrawdown">0%</div>
+                        <div style="font-size:13px;color:#e8eaed;" id="buyRecommendReason">
+                            Analyse en cours...
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-icon">⚖️</div>
-                            <div class="stat-card-title">Ratio de Sharpe</div>
+                    
+                    <div id="recommendSell" style="
+                        padding:20px;
+                        background:rgba(239,68,68,0.1);
+                        border:1px solid rgba(239,68,68,0.3);
+                        border-radius:8px;
+                    ">
+                        <div style="font-size:14px;color:#9ca3af;margin-bottom:10px;">VENTES</div>
+                        <div style="font-size:18px;font-weight:600;color:#ef4444;margin-bottom:10px;">
+                            <span id="sellRecommendStatus">--</span>
                         </div>
-                        <div class="stat-card-value" id="backtestSharpeRatio">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-icon">🟢</div>
-                            <div class="stat-card-title">Trades Gagnants</div>
-                        </div>
-                        <div class="stat-card-value positive" id="backtestWinningTrades">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header">
-                            <div class="stat-icon">🔴</div>
-                            <div class="stat-card-title">Trades Perdants</div>
-                        </div>
-                        <div class="stat-card-value negative" id="backtestLosingTrades">0</div>
-                    </div>
-                </div>
-                
-                <!-- Informations sur le test -->
-                <div class="section">
-                    <div class="section-title">Informations du Test</div>
-                    <div class="params-grid">
-                        <div class="param-item">
-                            <span class="param-label">Stratégie utilisée</span>
-                            <span class="param-value" id="backtestStrategy">--</span>
-                        </div>
-                        <div class="param-item">
-                            <span class="param-label">Période testée</span>
-                            <span class="param-value" id="backtestPeriod">--</span>
-                        </div>
-                        <div class="param-item">
-                            <span class="param-label">Cycles analysés</span>
-                            <span class="param-value" id="backtestCycles">--</span>
+                        <div style="font-size:13px;color:#e8eaed;" id="sellRecommendReason">
+                            Analyse en cours...
                         </div>
                     </div>
                 </div>
-                
-                <!-- Graphique de performance -->
-                <div class="section">
-                    <div class="section-title">📈 Courbe de Capital</div>
-                    <div class="chart-container large">
-                        <canvas id="backtestChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: GESTION DES ORDRES -->
+    <div id="tab-orders" class="tab-content">
+        <div class="section">
+            <div class="section-title">📝 Gestion des Ordres de Vente</div>
+            <p style="color:#9ca3af;font-size:14px;margin-bottom:20px;">
+                Modifiez manuellement les prix de vente de vos cycles actifs. Les ordres seront annulés puis recréés sur MEXC.
+            </p>
+            
+            <!-- Statistiques rapides -->
+            <div class="cards-grid" style="margin-bottom:30px;">
+                <div class="card">
+                    <div class="card-label">Ordres de Vente Actifs</div>
+                    <div class="card-value"><span id="activeSellOrdersCount">0</span></div>
+                    <div class="card-subtitle">En attente d'exécution</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Prix BTC Actuel</div>
+                    <div class="card-value">$<span id="currentBtcPrice">0.00</span></div>
+                    <div class="card-subtitle">Dernière mise à jour</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Gain Potentiel Total</div>
+                    <div class="card-value positive">$<span id="totalPotentialGain">0.00</span></div>
+                    <div class="card-subtitle">Si tous les ordres s'exécutent</div>
+                </div>
+            </div>
+            
+            <!-- Tableau des ordres -->
+            <div class="section">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <div class="section-title" style="margin:0;">Ordres de Vente</div>
+                    <div style="display:flex;gap:10px;">
+                        <button class="btn secondary" onclick="refreshOrders()">🔄 Actualiser</button>
+                        <button class="btn secondary" onclick="syncOrdersWithMexc()">🔗 Sync MEXC</button>
                     </div>
                 </div>
                 
-                <!-- Tableau des trades -->
-                <div class="section">
-                    <div class="section-title">📋 Détail des Trades</div>
-                    <div style="overflow-x: auto;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Cycle ID</th>
-                                    <th>Prix Achat</th>
-                                    <th>Prix Vente</th>
-                                    <th>Quantité</th>
-                                    <th>Gain Trade</th>
-                                    <th>Capital</th>
-                                    <th>Rendement %</th>
-                                </tr>
-                            </thead>
-                            <tbody id="backtestTradesTable">
-                                <tr><td colspan="7" class="loading">Chargement...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cycle ID</th>
+                                <th>Quantité BTC</th>
+                                <th>Prix d'Achat</th>
+                                <th>Prix de Vente</th>
+                                <th>Gain %</th>
+                                <th>Gain $</th>
+                                <th>Order ID</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sellOrdersTable">
+                            <tr><td colspan="8" class="loading">Chargement...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour modifier un ordre -->
+    <div id="editOrderModal" style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    ">
+        <div style="
+            background: #1a1f2e;
+            border: 1px solid #2d3748;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+        ">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h2 style="color:#4ade80;font-size:20px;margin:0;">✏️ Modifier l'Ordre de Vente</h2>
+                <button onclick="closeEditOrderModal()" style="
+                    background:none;
+                    border:none;
+                    color:#9ca3af;
+                    font-size:24px;
+                    cursor:pointer;
+                    padding:0;
+                    line-height:1;
+                ">×</button>
+            </div>
+            
+            <div style="margin-bottom:20px;">
+                <div style="color:#9ca3af;font-size:12px;margin-bottom:5px;">Cycle ID</div>
+                <div id="modalCycleId" style="color:#e8eaed;font-size:18px;font-weight:600;">#--</div>
+            </div>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;">
+                <div>
+                    <div style="color:#9ca3af;font-size:12px;margin-bottom:5px;">Quantité BTC</div>
+                    <div id="modalQuantity" style="color:#e8eaed;font-size:16px;">0.00000000</div>
+                </div>
+                <div>
+                    <div style="color:#9ca3af;font-size:12px;margin-bottom:5px;">Prix d'Achat</div>
+                    <div id="modalBuyPrice" style="color:#e8eaed;font-size:16px;">$0.00</div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom:20px;">
+                <label style="color:#64b5f6;font-size:13px;font-weight:600;text-transform:uppercase;display:block;margin-bottom:8px;">
+                    Nouveau Prix de Vente ($)
+                </label>
+                <input type="number" id="modalNewSellPrice" step="0.01" style="
+                    width:100%;
+                    padding:12px;
+                    background:rgba(255,255,255,0.03);
+                    border:1px solid rgba(100,181,246,0.2);
+                    border-radius:6px;
+                    color:white;
+                    font-size:18px;
+                    font-weight:600;
+                " placeholder="Ex: 95000.00">
+            </div>
+            
+            <div id="modalGainPreview" style="
+                padding:15px;
+                background:rgba(74,222,128,0.1);
+                border:1px solid rgba(74,222,128,0.3);
+                border-radius:8px;
+                margin-bottom:20px;
+            ">
+                <div style="color:#9ca3af;font-size:12px;margin-bottom:5px;">Gain Estimé</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div id="modalGainAmount" style="color:#4ade80;font-size:20px;font-weight:700;">$0.00</div>
+                    <div id="modalGainPercent" style="color:#4ade80;font-size:16px;font-weight:600;">+0.00%</div>
+                </div>
+            </div>
+            
+            <div id="modalStatus" style="display:none;padding:10px;border-radius:6px;margin-bottom:15px;text-align:center;"></div>
+            
+            <div style="display:flex;gap:10px;">
+                <button onclick="closeEditOrderModal()" class="btn secondary" style="flex:1;">Annuler</button>
+                <button onclick="saveNewSellPrice()" class="btn" style="flex:1;">💾 Enregistrer</button>
             </div>
         </div>
     </div>
@@ -621,15 +753,6 @@
                 </div>
                 <div class="stat-card-value positive" id="bestGain">$0.00</div>
                 <div class="stat-card-change" id="bestGainCycle">--</div>
-            </div>
-        </div>
-
-        <!-- UN SEUL GRAPHIQUE : Gain Moyen -->
-        <div class="section">
-            <div class="section-title">Gain Moyen par Cycle (Evolution)</div>
-            <p style="color:#9ca3af;font-size:14px;margin-bottom:15px;">Moyenne glissante sur les 10 derniers cycles</p>
-            <div class="chart-container small">
-                <canvas id="avgGainEvolutionChart"></canvas>
             </div>
         </div>
 
@@ -766,18 +889,12 @@
         <div class="section">
             <div class="section-title">🎯 Profils de Trading</div>
             <p style="color:#9ca3af;font-size:14px;margin-bottom:20px;">
-                Sélectionnez un profil prédéfini pour adapter votre stratégie aux conditions de marché actuelles.
+                Créez et gérez vos profils de trading pour adapter rapidement votre stratégie aux conditions de marché.
             </p>
-            
-            <!-- Liste des profils -->
-            <div class="section">
-                <div class="section-title">Profils Disponibles</div>
-                <div id="profilesList" class="loading">Chargement des profils...</div>
-            </div>
             
             <!-- Créer un nouveau profil -->
             <div class="section">
-                <div class="section-title">Créer un Nouveau Profil</div>
+                <div class="section-title">➕ Créer un Nouveau Profil</div>
                 <div class="config-form">
                     <div class="config-row">
                         <div class="config-input">
@@ -807,6 +924,15 @@
                         <button class="btn" onclick="createProfile()">➕ Créer Profil</button>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Liste des profils -->
+            <div class="section">
+                <div class="section-title">📋 Profils Disponibles</div>
+                <p style="color:#9ca3af;font-size:13px;margin-bottom:15px;">
+                    Cliquez sur "Appliquer" pour charger un profil dans la configuration du bot.
+                </p>
+                <div id="profilesList" class="loading">Chargement des profils...</div>
             </div>
         </div>
     </div>
@@ -854,7 +980,8 @@
     <script src="/static/js/charts.js"></script>
     <script src="/static/js/actions.js"></script>
     <script src="/static/js/analytics.js"></script>
-    <script src="/static/js/backtesting.js"></script>
+    <script src="/static/js/market.js"></script>
+    <script src="/static/js/orders.js"></script>
     <script src="/static/js/profiles.js"></script>
     <script src="/static/js/tabs.js"></script>
     <script src="/static/js/init.js"></script>

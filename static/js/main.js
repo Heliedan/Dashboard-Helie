@@ -170,6 +170,22 @@ async function refreshData() {
         }
         
         const activeCycles = data.cycles.filter(c => c.status !== 'completed');
+        
+        // Calculer le gain potentiel total (cycles avec ordres de vente actifs)
+        let totalPotentialGain = 0;
+        activeCycles.forEach(c => {
+            // Uniquement les cycles avec ordre de vente (pas les ordres d'achat)
+            if (c.status.includes('sell') || c.status === 'sell' || c.status === 'order_sell_placed') {
+                const gain = (c.sellPrice * c.quantity) - (c.buyPrice * c.quantity);
+                totalPotentialGain += gain;
+            }
+        });
+        
+        // Mettre à jour le gain potentiel dans Vue d'ensemble
+        if (document.getElementById('totalPotentialGainOverview')) {
+            document.getElementById('totalPotentialGainOverview').textContent = formatNumber(totalPotentialGain, 2);
+        }
+        
         const activeTable = document.getElementById('activeCyclesTable');
         
         if (activeCycles.length === 0) {

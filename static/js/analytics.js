@@ -37,9 +37,25 @@ async function loadAnalyticsData() {
 
 // Calcul des statistiques avancées
 function calculateAnalytics(cycles) {
+    console.log(`📊 calculateAnalytics appelé avec ${cycles.length} cycles`);
+    console.log('Premier cycle exemple:', cycles[0]);
+    
+    // Analyser tous les statuts présents
+    const statusCounts = {};
+    cycles.forEach(c => {
+        const status = c.status || 'undefined';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+    console.log('📊 Répartition des statuts:', statusCounts);
+    
     const completedCycles = cycles.filter(c => c.status === 'completed');
+    console.log(`   → ${completedCycles.length} cycles avec status='completed'`);
     
     if (completedCycles.length === 0) {
+        console.warn('⚠️ Aucun cycle complété trouvé !');
+        console.warn('   Statut du premier cycle:', cycles[0]?.status);
+        console.warn('   Type du statut:', typeof cycles[0]?.status);
+        console.warn('   Statut === "completed" ?', cycles[0]?.status === 'completed');
         return {
             successRate: 0,
             avgGain: 0,
@@ -139,10 +155,9 @@ function updateAnalyticsUI(data) {
 
 // Mise à jour des graphiques Analytics
 function updateAnalyticsCharts(data, allCycles) {
+    console.log('📊 Mise à jour graphiques Analytics');
     const completedCycles = data.completedCycles;
-    
-    // Graphique: Evolution du gain moyen
-    updateAvgGainEvolutionChart(completedCycles);
+    console.log(`   → ${completedCycles ? completedCycles.length : 0} cycles complétés`);
     
     // Tables: Top & Bottom trades
     updateTopBottomTrades(completedCycles);
@@ -497,6 +512,18 @@ function updateWinLossRatioChart(data) {
 
 // Tables: Top & Bottom trades
 function updateTopBottomTrades(cycles) {
+    console.log(`📊 Mise à jour Top/Bottom trades avec ${cycles ? cycles.length : 0} cycles`);
+    
+    // Vérifier que cycles existe et contient des données
+    if (!cycles || cycles.length === 0) {
+        console.log('⚠️ Aucun cycle complété pour Top/Bottom');
+        const topBody = document.getElementById('topTradesBody');
+        const bottomBody = document.getElementById('bottomTradesBody');
+        if (topBody) topBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#9ca3af;"><div>📊 Aucun cycle complété</div><div style="font-size:12px;margin-top:8px;">Les cycles apparaîtront ici une fois qu\'ils seront terminés (vendus)</div></td></tr>';
+        if (bottomBody) bottomBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#9ca3af;"><div>📊 Aucun cycle complété</div><div style="font-size:12px;margin-top:8px;">Les cycles apparaîtront ici une fois qu\'ils seront terminés (vendus)</div></td></tr>';
+        return;
+    }
+    
     // Calculer les gains pour chaque cycle
     const cyclesWithGains = cycles.map(c => {
         const gain = (c.sellPrice * c.quantity) - (c.buyPrice * c.quantity);
@@ -510,6 +537,11 @@ function updateTopBottomTrades(cycles) {
         .slice(0, 10);
     
     const topBody = document.getElementById('topTradesBody');
+    if (!topBody) {
+        console.error('❌ Element topTradesBody introuvable');
+        return;
+    }
+    
     if (topTrades.length === 0) {
         topBody.innerHTML = '<tr><td colspan="6" class="loading">Aucune donnée</td></tr>';
     } else {
@@ -531,6 +563,11 @@ function updateTopBottomTrades(cycles) {
         .slice(0, 10);
     
     const bottomBody = document.getElementById('bottomTradesBody');
+    if (!bottomBody) {
+        console.error('❌ Element bottomTradesBody introuvable');
+        return;
+    }
+    
     if (bottomTrades.length === 0) {
         bottomBody.innerHTML = '<tr><td colspan="6" class="loading">Aucune donnée</td></tr>';
     } else {

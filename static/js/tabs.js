@@ -22,6 +22,24 @@ function switchTab(tabName, event) {
         if (button) button.classList.add('active');
     }
     
+    // Si on passe à l'onglet Marché, charger les données
+    if (tabName === 'market') {
+        console.log('🔄 Passage à l\'onglet Marché');
+        setTimeout(() => {
+            if (typeof startMarketRefresh === 'function') {
+                console.log('📈 Démarrage du rafraîchissement marché...');
+                startMarketRefresh();
+            } else {
+                console.error('❌ startMarketRefresh n\'est pas définie !');
+            }
+        }, 100);
+    } else {
+        // Arrêter le rafraîchissement si on quitte l'onglet marché
+        if (typeof stopMarketRefresh === 'function') {
+            stopMarketRefresh();
+        }
+    }
+    
     // Si on passe à l'onglet Analytics, charger les données
     if (tabName === 'analytics') {
         console.log('🔄 Passage à l\'onglet Analytics');
@@ -35,16 +53,15 @@ function switchTab(tabName, event) {
         }, 100);
     }
     
-    
-    // Si on passe à l'onglet Backtesting, charger les données
-    if (tabName === 'backtesting') {
-        console.log('🔄 Passage à l\'onglet Backtesting');
+    // Si on passe à l'onglet Gestion des Ordres, charger les données
+    if (tabName === 'orders') {
+        console.log('🔄 Passage à l\'onglet Gestion des Ordres');
         setTimeout(() => {
-            if (typeof loadBacktestData === 'function') {
-                console.log('🧪 Chargement du backtesting...');
-                loadBacktestData();
+            if (typeof loadSellOrders === 'function') {
+                console.log('📝 Chargement des ordres de vente...');
+                loadSellOrders();
             } else {
-                console.error('❌ loadBacktestData n\'est pas définie !');
+                console.error('❌ loadSellOrders n\'est pas définie !');
             }
         }, 100);
     }
