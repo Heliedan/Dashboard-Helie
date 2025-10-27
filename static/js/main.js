@@ -25,6 +25,10 @@ function getStatusBadge(s) {
     return '<span class="badge ' + className + '">' + s + '</span>';
 }
 
+// Variables pour le compte à rebours
+let countdownInterval = null;
+let nextCycleTimestamp = null;
+
 // Gestion du mode automatique
 async function refreshAutoStatus() {
     try {
@@ -39,27 +43,70 @@ async function refreshAutoStatus() {
         }
         
         const statusText = document.getElementById('autoStatusText');
-        const countdown = document.getElementById('countdown');
         
         if (data.enabled) {
             statusText.textContent = 'Actif';
             statusText.classList.remove('inactive');
             
             if (data.minutes_remaining !== null) {
-                const mins = Math.floor(data.minutes_remaining);
-                const secs = Math.floor((data.minutes_remaining - mins) * 60);
-                countdown.textContent = mins + 'm ' + secs + 's';
+                // Calculer le timestamp du prochain cycle
+                nextCycleTimestamp = Date.now() + (data.minutes_remaining * 60 * 1000);
+                
+                // Démarrer le compte à rebours en direct
+                startCountdown();
             } else {
-                countdown.textContent = 'Calcul...';
+                document.getElementById('countdown').textContent = 'Calcul...';
             }
         } else {
             statusText.textContent = 'Inactif';
             statusText.classList.add('inactive');
-            countdown.textContent = '--';
+            document.getElementById('countdown').textContent = '--';
+            
+            // Arrêter le compte à rebours
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
         }
     } catch (e) {
         console.error('Erreur auto status:', e);
     }
+}
+
+// Démarrer le compte à rebours en direct (mise à jour chaque seconde)
+function startCountdown() {
+    // Arrêter le précédent intervalle s'il existe
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+    
+    // Mettre à jour immédiatement
+    updateCountdownDisplay();
+    
+    // Puis mettre à jour chaque seconde
+    countdownInterval = setInterval(() => {
+        updateCountdownDisplay();
+    }, 1000);
+}
+
+// Mettre à jour l'affichage du compte à rebours
+function updateCountdownDisplay() {
+    if (!nextCycleTimestamp) return;
+    
+    const now = Date.now();
+    const remaining = nextCycleTimestamp - now;
+    
+    if (remaining <= 0) {
+        document.getElementById('countdown').textContent = '0m 0s';
+        // Le prochain refresh récupérera le nouveau temps
+        return;
+    }
+    
+    const totalSeconds = Math.floor(remaining / 1000);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    
+    document.getElementById('countdown').textContent = mins + 'm ' + secs + 's';
 }
 
 async function toggleAuto() {
