@@ -7,12 +7,50 @@ import time
 import subprocess
 import json
 import threading
+import platform
 from flask import Flask, render_template, jsonify, request, send_file
 from datetime import datetime, timedelta
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
-DB_PATH = "db/bot.db"
+# Détection automatique du chemin de la base de données
+def get_db_path():
+    """Détecte automatiquement le chemin de la base de données selon l'OS"""
+    # Essayer d'abord le chemin local (priorité)
+    if os.path.exists("db/bot.db"):
+        return "db/bot.db"
+    
+    # Détection selon l'OS
+    system = platform.system()
+    
+    if system == "Windows":
+        # Chemins possibles pour Windows
+        possible_paths = [
+            os.path.join(os.path.expanduser("~"), "cryptomancien", "bot-db", "bot.db"),
+            os.path.join(os.path.expanduser("~"), "bot-spot", "db", "bot.db"),
+            r"C:\Users\Utilisateur\cryptomancien\bot-db\bot.db",
+            "db/bot.db"
+        ]
+    else:
+        # Chemins possibles pour Linux/Mac
+        possible_paths = [
+            os.path.join(os.path.expanduser("~"), "bot-spot", "db", "bot.db"),
+            os.path.join(os.path.expanduser("~"), "Crypto", "bot-spot", "db", "bot.db"),
+            "/home/Crypto/bot-spot/db/bot.db",
+            "db/bot.db"
+        ]
+    
+    # Chercher le premier chemin qui existe
+    for path in possible_paths:
+        if os.path.exists(path):
+            print(f"✅ Base de données trouvée: {path}")
+            return path
+    
+    # Si aucun chemin n'existe, retourner le chemin par défaut
+    print("⚠️ Aucune base de données trouvée, utilisation du chemin par défaut: db/bot.db")
+    return "db/bot.db"
+
+DB_PATH = get_db_path()
 CONFIG = {}
 BTC_PRICE_CACHE = {"price": 0, "timestamp": 0}
 CACHE_DURATION = 60
